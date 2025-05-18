@@ -1,0 +1,490 @@
+🧱 WEEK 1: SETUP AND AUTHENTICATION
+✅ 1. Project Setup
+Objective: Lay the groundwork for your full-stack app.
+
+Actions:
+Initialize React Project
+
+bash
+Copy
+Edit
+npx create-react-app homelink-sa
+cd homelink-sa
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+Add Tailwind to ./src/index.css:
+
+css
+Copy
+Edit
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+Firebase Project Setup
+
+Go to Firebase Console
+
+Create a project named homelink-sa
+
+Enable:
+
+Authentication
+
+Firestore Database
+
+Storage
+
+CI/CD Deployment (Render/Vercel)
+
+Push your repo to GitHub.
+
+Link it to Render or Vercel.
+
+Enable automatic deployment from the main branch.
+
+✅ 2. Authentication Module
+Objective: Enable secure user logins and role assignment.
+
+Actions:
+Install Firebase SDK
+
+bash
+Copy
+Edit
+npm install firebase
+Firebase Auth Logic (/firebase/config.js)
+
+js
+Copy
+Edit
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+
+const firebaseConfig = {
+  apiKey: "XXXX",
+  authDomain: "XXXX",
+  projectId: "XXXX",
+  storageBucket: "XXXX",
+  messagingSenderId: "XXXX",
+  appId: "XXXX",
+};
+
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+Signup/Login UI
+
+Use email/password (plus optional Google OAuth).
+
+On signup, ask user: Are you a Homeowner or Service Provider?
+
+Store user role in Firestore
+
+js
+Copy
+Edit
+await setDoc(doc(db, "users", uid), {
+  email: user.email,
+  role: "provider", // or "homeowner"
+  createdAt: serverTimestamp(),
+});
+✅ 3. Provider Onboarding
+Objective: Let service providers submit their profile and upload docs.
+
+Actions:
+Create onboarding form:
+
+Name, Services Offered
+
+Location (city/suburb)
+
+Upload: ID, Proof of Certification
+
+Description, Experience
+
+Store uploads in Firebase Storage:
+
+js
+Copy
+Edit
+const storageRef = ref(storage, `docs/${uid}/idProof.pdf`);
+await uploadBytes(storageRef, file);
+Admin approval system:
+
+Admin marks providers as "isVerified": true in Firestore
+
+Only verified providers can appear in listings or accept bookings
+
+✅ 4. UI Pages
+Pages to Build:
+
+/login: login/register toggle
+
+/dashboard/homeowner: Homeowner main panel
+
+/dashboard/provider: Provider dashboard (availability, bookings, etc.)
+
+Add role-based redirect after login:
+
+js
+Copy
+Edit
+if (role === "provider") navigate("/dashboard/provider");
+else navigate("/dashboard/homeowner");
+🔚 Deliverables for Week 1
+✅ React app initialized with Tailwind
+
+✅ Firebase connected (Auth + Firestore + Storage)
+
+✅ Signup/login with role selection
+
+✅ Firestore user profile storage
+
+✅ Provider onboarding form with document upload
+
+✅ Admin flag system for provider verification
+
+✅ Skeleton dashboard routes with redirects
+
+Let me know if you'd like:
+
+🔧 UI component templates (form, dashboard)
+
+🔐 Firebase Auth rules setup
+
+🛠️ Sample code for uploading and verifying documents
+
+
+
+🎯 Focus Areas:
+Booking Calendar System
+
+Emergency Toggle
+
+Geolocation-Based Matching
+
+UI Components to Support These Features
+
+✅ 1. Booking System with Availability Calendar
+Frontend:
+Use FullCalendar.js or React Big Calendar
+
+bash
+Copy
+Edit
+npm install @fullcalendar/react @fullcalendar/daygrid
+Provider Flow:
+
+Providers log in and mark available time slots.
+
+Store availability under:
+
+bash
+Copy
+Edit
+/availability/{providerId}/[timestamp]: true
+Homeowner Flow:
+
+Display calendar UI showing available time slots per provider.
+
+On slot selection:
+
+Save booking to Firestore:
+
+js
+Copy
+Edit
+/bookings/{bookingId}:
+{
+  providerId,
+  homeownerId,
+  timestamp,
+  status: "pending"
+}
+Booking Confirmation:
+
+Status flow: "pending" → "confirmed" → "completed"
+
+Trigger confirmation via email or in-app notification.
+
+✅ 2. Emergency Service Toggle
+Provider Panel:
+Add a switch/toggle:
+
+js
+Copy
+Edit
+/users/{uid}.isEmergencyReady = true
+User Flow:
+On "Emergency Request" checkbox:
+
+Filter providers who have:
+
+js
+Copy
+Edit
+isEmergencyReady === true
+Notify available emergency providers immediately (email or push):
+
+Use Firebase Cloud Messaging (FCM)
+
+✅ 3. Geolocation Integration
+Frontend:
+Get user’s location via browser:
+
+js
+Copy
+Edit
+navigator.geolocation.getCurrentPosition((position) => {
+  const { latitude, longitude } = position.coords;
+});
+Use Google Maps API to reverse-geocode the user’s location:
+
+https
+Copy
+Edit
+https://maps.googleapis.com/maps/api/geocode/json?latlng={lat},{lng}&key=YOUR_API_KEY
+Proximity Filtering:
+Option A: Firebase + GeoFire
+
+Store provider locations in GeoFire format
+
+Query by radius (e.g. 5km, 10km)
+
+js
+Copy
+Edit
+geoQuery = geoFire.query({ center: [lat, lng], radius: 10 });
+Option B: MongoDB + Geospatial Index
+
+If using custom backend:
+
+Add 2dsphere index on provider coordinates
+
+Use $near query to fetch nearby providers
+
+✅ 4. UI Components for Week 2
+Page/Component	Function
+BookingCalendar.js	Displays availability calendar for providers
+EmergencyToggle.js	Provider switch to mark “Emergency Ready”
+FindProvider.js	Homeowner view with map and filtered providers
+NearbyMapView.js	Map showing providers near user location
+
+📦 Firestore Suggested Schema (simplified)
+bash
+Copy
+Edit
+/users/{uid}
+  ├─ role: "provider" | "homeowner"
+  ├─ isEmergencyReady: true
+  ├─ location: { lat, lng }
+
+/availability/{providerId}
+  ├─ {timestamp}: true
+
+/bookings/{bookingId}
+  ├─ providerId
+  ├─ homeownerId
+  ├─ time
+  ├─ status: "pending" | "confirmed" | "completed"
+🔚 Deliverables for Week 2
+✅ Booking calendar system in place
+
+✅ Providers define and store availability
+
+✅ Homeowners can book a time slot
+
+✅ Emergency-ready toggle and query filtering
+
+✅ Geolocation-based provider display (map or list)
+
+✅ UI components for availability, emergency mode, and map integration
+
+Let me know if you'd like:
+
+🧩 Code snippets for FullCalendar integration
+
+🌍 Google Maps + marker rendering logic
+
+🚨 Emergency notification simulation (FCM or toast alert)
+
+🗺️ Leaflet-based alternative for map visualization (open source)
+
+Just say the word and we’ll prep Week 3 next!
+
+📅 WEEK 3: PAYMENTS, CHAT, REVIEWS, POLISH
+🎯 Focus Areas:
+Secure Mobile Payments
+
+In-App Real-Time Chat
+
+Ratings & Reviews
+
+UI Enhancements & Deployment
+
+✅ 1. Secure Mobile Payments
+Integration Options:
+Stripe (global, card-focused)
+
+Paystack (ideal for South Africa/Nigeria; supports EFT & mobile money)
+
+Workflow:
+User books → payment initiated.
+
+Payment processed → funds held in escrow.
+
+Job marked "completed" → funds released to provider.
+
+Commission optionally deducted (e.g., 10%).
+
+Implementation:
+Use Stripe Checkout or Paystack Inline
+
+Store payments in Firestore:
+
+bash
+Copy
+Edit
+/payments/{paymentId}
+  ├─ userId
+  ├─ providerId
+  ├─ bookingId
+  ├─ amount
+  ├─ status: "pending" | "paid" | "released"
+Admin Dashboard:
+Track all payments and releases.
+
+Approve/trigger manual releases if needed.
+
+✅ 2. In-App Chat
+Options:
+Firebase Realtime DB (quickest)
+
+Socket.io (if using Node backend)
+
+Basic Schema (Firebase RTDB):
+json
+Copy
+Edit
+/chats/{bookingId}/messages
+[
+  {
+    senderId: "uid1",
+    message: "Hello",
+    timestamp: "2025-05-18T15:00:00"
+  }
+]
+Features:
+Chat per booking
+
+Show unread indicator
+
+Real-time updates
+
+Notifications (optional: Firebase Cloud Messaging)
+
+Optional:
+Integrate Jitsi Meet or Daily.co for video calls.
+
+✅ 3. Ratings and Reviews
+Trigger:
+After booking is marked completed
+
+User Flow:
+Homeowner is prompted to rate:
+
+⭐ 1 to 5 stars
+
+Comment (optional)
+
+Stored under:
+
+bash
+Copy
+Edit
+/reviews/{providerId}/{reviewId}
+  ├─ userId
+  ├─ rating: 5
+  ├─ comment: "Excellent work!"
+  ├─ timestamp
+Display:
+Show on provider profile
+
+Aggregate rating: average of all reviews
+
+Filter providers by rating
+
+✅ 4. UI Enhancements & Final Deployment
+Front-End Polish:
+Add react-toastify for:
+
+Success/error messages
+
+Booking confirmations
+
+Payment results
+
+Improve responsiveness:
+
+Tailwind breakpoints (sm, md, lg)
+
+Mobile-friendly chat UI
+
+Sticky headers/footers
+
+Add loading indicators using react-loader-spinner or similar
+
+Deployment:
+Deploy on Render or Vercel
+
+Connect custom domain (optional)
+
+Enable analytics via Firebase or Google Analytics
+
+Testing Goals:
+✅ 3 test homeowners
+
+✅ 3 verified test providers
+
+✅ Run complete test flows:
+
+Booking
+
+Emergency toggle
+
+Payment
+
+Chat
+
+Review
+
+🔚 Deliverables for Week 3
+✅ Payment system functional
+
+✅ Real-time chat per booking
+
+✅ Review/rating system
+
+✅ Refined UI (mobile-responsive, interactive feedback)
+
+✅ Deployment ready (with test users)
+
+✅ Admin tools for payments & provider management
+
+Would you like:
+
+🔐 Stripe/Paystack code integration sample?
+
+💬 Firebase chat boilerplate?
+
+⭐ Review form and star-rating component?
+
+🚀 Final checklist for demo or deployment?
+
+Just say the word and I’ll generate those for you.
+
+
+
